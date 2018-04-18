@@ -226,7 +226,10 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
     int res = getReactApplicationContext().checkCallingOrSelfPermission(permission);
     return res == PackageManager.PERMISSION_GRANTED;
   }
-
+  private boolean test(){
+    return true; 
+    
+  }
   @ReactMethod
   public void isRecognizing(Callback callback) {
     callback.invoke(isRecognizing);
