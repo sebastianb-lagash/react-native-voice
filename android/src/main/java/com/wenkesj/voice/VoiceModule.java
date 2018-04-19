@@ -36,7 +36,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
   private SpeechRecognizer speech = null;
   public boolean isRecognizing = false;
   private String locale = null;
-
+  private ReadableMap optsp = null;
   public VoiceModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
@@ -159,12 +159,13 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
     }
 
     this.locale = locale;
-
+    this.optsp = opts;
     Handler mainHandler = new Handler(this.reactContext.getMainLooper());
     mainHandler.post(new Runnable() {
       @Override
       public void run() {
         try {
+
           startListening(opts);
           isRecognizing = true;
           callback.invoke(false);
@@ -174,7 +175,6 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
       }
     });
   }
-
   @ReactMethod
   public void stopSpeech(final Callback callback) {
     Handler mainHandler = new Handler(this.reactContext.getMainLooper());
@@ -184,7 +184,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
         try {
           speech.stopListening();
           isRecognizing = false;
-          ToggleMuteAudio(false);
+          //ToggleMuteAudio(false);
           callback.invoke(false);
         } catch(Exception e) {
           callback.invoke(e.getMessage());
@@ -202,7 +202,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
         try {
           speech.cancel();
           isRecognizing = false;
-          ToggleMuteAudio(false);
+          //ToggleMuteAudio(false);
           callback.invoke(false);
         } catch(Exception e) {
           callback.invoke(e.getMessage());
@@ -221,7 +221,7 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
           speech.destroy();
           speech = null;
           isRecognizing = false;
-          ToggleMuteAudio(false);
+          //ToggleMuteAudio(false);
           callback.invoke(false);
         } catch(Exception e) {
           callback.invoke(e.getMessage());
@@ -290,18 +290,30 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
     sendEvent("onSpeechEnd", event);
     Log.d("ASR", "onEndOfSpeech()");
     isRecognizing = false;
-    ToggleMuteAudio(false);
+    
+    //ToggleMuteAudio(false);
   }
 
   @Override
   public void onError(int errorCode) {
-    String errorMessage = String.format("%d/%s", errorCode, getErrorText(errorCode));
+    String errorMsgCalc = getErrorText(errorCode);
+    String errorMessage = String.format("%d/%s", errorCode, errorMsgCalc);
     WritableMap error = Arguments.createMap();
     error.putString("message", errorMessage);
     WritableMap event = Arguments.createMap();
     event.putMap("error", error);
     sendEvent("onSpeechError", event);
     Log.d("ASR", "onError() - " + errorMessage);
+
+    switch(errorMsgCalc){
+      case "Audio recording error":
+      case "Client side error":
+      case "No match":
+      case "No speech input":
+      case "Didn't understand, please try again.":
+      startListening(this.optsp);
+        break;
+    }
   }
 
   @Override
@@ -336,13 +348,14 @@ public class VoiceModule extends ReactContextBaseJavaModule implements Recogniti
 
     ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
     for (String result : matches) {
-      arr.pushString(result);
+      arr.pushString(result); 
     }
 
     WritableMap event = Arguments.createMap();
     event.putArray("value", arr);
     sendEvent("onSpeechResults", event);
     Log.d("ASR", "onResults()");
+    startListening(this.optsp);
   }
 
   @Override
