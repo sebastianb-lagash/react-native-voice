@@ -78,13 +78,14 @@
         BOOL isFinal = result.isFinal;
         if (result != nil) {
             NSMutableArray* transcriptionDics = [NSMutableArray new];
-            for (SFTranscription* transcription in result.transcriptions) {
-                [transcriptionDics addObject:transcription.formattedString];
+            if (result.transcriptions.count>0){
+                [transcriptionDics addObject:result.transcriptions[0].formattedString];
             }
             [self sendResult:nil:result.bestTranscription.formattedString :transcriptionDics :@(isFinal)];
         }
 
         if (isFinal == YES) {
+            
             if (self.recognitionTask.isCancelled || self.recognitionTask.isFinishing){
                 [self sendEventWithName:@"onSpeechEnd" body:@{@"error": @false}];
             }
